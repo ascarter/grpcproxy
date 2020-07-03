@@ -95,3 +95,11 @@ Send a message and receive it back. By default, it will send to server. Use `-ad
 |`-address string`|server address (default ":50051")|
 |` -cert string`|certificate file (default "cert.pem")
 |`-key string`|key file (default "key.pem")|
+
+## References
+
+* [protocol-buffers](https://developers.google.com/protocol-buffers/)
+* [protobuf-go](https://github.com/protocolbuffers/protobuf-go)
+* [grpc-go](https://github.com/grpc/grpc-go)
+* [gRPC Go](https://grpc.io/docs/languages/go/)
+* [Language guide proto3](https://developers.google.com/protocol-buffers/docs/proto3)
