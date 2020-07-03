@@ -60,17 +60,29 @@ func main() {
 		log.Fatal(err)
 	}
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	proxyHandle := func(w http.ResponseWriter, r *http.Request) {
 		dump, err := httputil.DumpRequest(r, true)
 		if err != nil {
 			http.Error(w, fmt.Sprint(err), http.StatusInternalServerError)
 			return
 		}
-		log.Printf("%q", dump)
+		log.Print(string(dump))
 		proxy.ServeHTTP(w, r)
+	}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/chat.greeter.Greeter/", proxyHandle)
+	mux.HandleFunc("/chat.echo.Echo/", proxyHandle)
+	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+		if req.URL.Path != "/" {
+			log.Printf("Not found: %v", req.URL)
+			http.NotFound(w, req)
+			return
+		}
+		fmt.Fprint(w, "index")
 	})
 
-	l, err := net.Listen("tcp", address)
+	lis, err := net.Listen("tcp", address)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
@@ -81,11 +93,10 @@ func main() {
 	}
 
 	s := &http.Server{
-		Handler:   nil,
+		Handler:   mux,
 		TLSConfig: tlsConfig,
 	}
 
-	log.Printf("Proxy listening on %v => sending to %v", address, origin)
-	log.Fatal(s.ServeTLS(l, "", ""))
-	// log.Fatal(http.ListenAndServeTLS(address, certFile, keyFile, nil))
+	log.Printf("Proxy forwarding %v => %v", address, origin)
+	log.Fatal(s.ServeTLS(lis, certFile, keyFile))
 }

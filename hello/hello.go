@@ -37,7 +37,6 @@ func main() {
 	// Set up a connection to the server.
 	log.Printf("Connection %v", address)
 	conn, err := grpc.Dial(address, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)), grpc.WithBlock())
-	//conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}

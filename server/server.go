@@ -63,7 +63,5 @@ func main() {
 	chat.RegisterEchoServer(s, &echoServer{})
 
 	log.Printf("Listening on %v", address)
-	if err := s.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
-	}
+	log.Fatal(s.Serve(lis))
 }
