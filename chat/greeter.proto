@@ -2,7 +2,7 @@ syntax = "proto3";
 
 option go_package = "github.com/ascarter/grpcproxy/chat";
 
-package chat.greeter;
+package chat;
 
 // The greeting service definition.
 service Greeter {

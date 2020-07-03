@@ -2,7 +2,7 @@ syntax = "proto3";
 
 option go_package = "github.com/ascarter/grpcproxy/chat";
 
-package chat.echo;
+package chat;
 
 // The Echo service provides replay capabilities
 service Echo {

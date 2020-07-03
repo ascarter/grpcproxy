@@ -71,8 +71,8 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/chat.greeter.Greeter/", proxyHandle)
-	mux.HandleFunc("/chat.echo.Echo/", proxyHandle)
+	mux.HandleFunc("/chat.Greeter/", proxyHandle)
+	mux.HandleFunc("/chat.Echo/", proxyHandle)
 	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		if req.URL.Path != "/" {
 			log.Printf("Not found: %v", req.URL)

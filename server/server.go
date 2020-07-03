@@ -37,13 +37,13 @@ type echoServer struct {
 
 // SayHello implements chat.GreeterServer
 func (s *greeterServer) SayHello(ctx context.Context, in *chat.HelloRequest) (*chat.HelloReply, error) {
-	log.Printf("Received: %v", in.GetName())
+	log.Printf("Received HelloRequest: %v", in.GetName())
 	return &chat.HelloReply{Message: "Hello " + in.GetName()}, nil
 }
 
 // Replay impelments chat.EchoServer
 func (s *echoServer) Replay(ctx context.Context, in *chat.EchoRequest) (*chat.EchoReply, error) {
-	log.Printf("Received: %v", in.GetMessage())
+	log.Printf("Received EchoRequest: %v", in.GetMessage())
 	return &chat.EchoReply{Message: in.GetMessage()}, nil
 }
 
