@@ -1,7 +1,5 @@
 GOROOT ?= $(shell go env GOROOT)
 
-PROTOC := $(HOME)/sdk/protoc/bin/protoc
-
 DIST    := dist
 OBJS    := $(DIST)/echo \
 		   $(DIST)/hello \
@@ -23,8 +21,7 @@ $(CERT):
 	go run $(MK_CERT) -host localhost
 
 $(PB_OBJS): $(PB_SRCS)
-	$(PROTOC) --version
-	$(PROTOC) -I chat/ $^ --go_out=chat --go_opt=paths=source_relative --go-grpc_out=chat --go-grpc_opt=paths=source_relative
+	protoc -I chat/ $^ --go_out=chat --go_opt=paths=source_relative --go-grpc_out=chat --go-grpc_opt=paths=source_relative
 
 .DEFAULT_GOAL = all
 
