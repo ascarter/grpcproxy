@@ -11,7 +11,7 @@ CERT    := cert.pem
 KEYFILE := key.pem
 MK_CERT := $(GOROOT)/src/crypto/tls/generate_cert.go
 
-$(DIST)/%: %/*.go | $(DIST)
+$(DIST)/%: ./% %/*.go | $(DIST)
 	go build -o $@ ./$<
 
 $(DIST):
