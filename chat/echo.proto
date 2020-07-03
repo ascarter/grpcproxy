@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+option go_package = "github.com/ascarter/grpcproxy/chat";
+
+package chat.echo;
+
+// The Echo service provides replay capabilities
+service Echo {
+  // Replay a message
+  rpc Replay (EchoRequest) returns (EchoReply) {}
+}
+
+// An EchoRequest contains messages to replay
+message EchoRequest {
+  string message = 1;
+}
+
+// An EchoReply replays the input message
+message EchoReply {
+  string message = 1;
+}
