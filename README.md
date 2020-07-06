@@ -23,7 +23,7 @@ A Makefile provides the following targets:
 
 | Target | Use |
 | ------ | --- |
-|*build*|Generate pb.go files from proto, a certificate and key, and build clients, proxy, and server|
+|*build*|Generate pb.go files from proto, a certificate and key, and build all clients, proxy, and server|
 |*clean*|Remove generated files|
 |*distclean*|Remove everything|
 

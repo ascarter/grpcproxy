@@ -29,6 +29,9 @@ all: build
 
 build: $(PB_OBJS) $(OBJS) $(CERT)
 
+test: $(PB_OBJS) $(PB_SRCS)
+	go test ./...
+
 clean:
 	-rm $(PB_OBJS) $(OBJS)
 
