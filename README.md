@@ -23,9 +23,9 @@ A Makefile provides the following targets:
 
 | Target | Use |
 | ------ | --- |
-|*build*|Generate pb.go files from proto, a certificate and key, and build all clients, proxy, and server|
+|*build*|Generate pb.go files from proto, a server and proxy keypair, and build all clients, proxy, and server|
 |*clean*|Remove generated files|
-|*distclean*|Remove everything|
+|*distclean*|Remove everything including keypairs|
 
 ## Running
 
@@ -33,7 +33,7 @@ The server and proxy should either run in separate shells or run in the backgrou
 
 ### Server
 
-By default, server listens on `:50051` and looks for `cert.pem` and `key.pem` in the current directory.
+By default, server listens on `:50051` and looks for `server_cert.pem` and `server_key.pem` in the current directory.
 
 ```
 ./dist/server
@@ -42,12 +42,12 @@ By default, server listens on `:50051` and looks for `cert.pem` and `key.pem` in
 | Flag | Use |
 | ---- | --- |
 |`-address string`|listen address (default ":50051")|
-|`-cert string`|certificate file (default "cert.pem")
-|`-key string`|key file (default "key.pem")|
+|`-cert string`|certificate file (default "server_cert.pem")
+|`-key string`|key file (default "server_key.pem")|
 
 ### Proxy
 
-By default, proxy listens on `:50050` and looks for `cert.pem` and `key.pem` in the current directory:
+By default, proxy listens on `:50050` and looks for `proxy_cert.pem` and `proxy_key.pem` in the current directory:
 
 ```
 ./dist/server
@@ -56,8 +56,9 @@ By default, proxy listens on `:50050` and looks for `cert.pem` and `key.pem` in 
 | Flag | Use |
 | ---- | --- |
 |`-address string`|listen address (default ":50050")|
-|` -cert string`|certificate file (default "cert.pem")
-|`-key string`|key file (default "key.pem")|
+|` -cert string`|certificate file (default "proxy_cert.pem")
+|`-key string`|key file (default "proxy_key.pem")|
+|`-origincert string`|origin certificate file (default "server_cert.pem")|
 |`-origin string`|proxy origin (default ":50051")|
 
 ### hello
@@ -76,7 +77,6 @@ Send a name and receive a greeting. By default, it will send to server. Use `-ad
 | ---- | --- |
 |`-address string`|server address (default ":50051")|
 |` -cert string`|certificate file (default "cert.pem")
-|`-key string`|key file (default "key.pem")|
 
 ### echo
 
@@ -94,7 +94,16 @@ Send a message and receive it back. By default, it will send to server. Use `-ad
 | ---- | --- |
 |`-address string`|server address (default ":50051")|
 |` -cert string`|certificate file (default "cert.pem")
-|`-key string`|key file (default "key.pem")|
+
+## Example
+
+```
+make
+cd dist
+./server &
+.proxy &
+./echo -cert proxy_cert.pem -address :50050
+```
 
 ## References
 

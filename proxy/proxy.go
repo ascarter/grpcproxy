@@ -15,17 +15,19 @@ import (
 )
 
 var (
-	certFile string
-	keyFile  string
-	address  string
-	origin   string
+	certFile       string
+	keyFile        string
+	originCertFile string
+	address        string
+	origin         string
 )
 
 func init() {
 	flag.StringVar(&address, "address", ":50050", "listen address")
 	flag.StringVar(&origin, "origin", ":50051", "proxy origin")
-	flag.StringVar(&certFile, "cert", "cert.pem", "certificate file")
-	flag.StringVar(&keyFile, "key", "key.pem", "key file")
+	flag.StringVar(&certFile, "cert", "proxy_cert.pem", "certificate file")
+	flag.StringVar(&keyFile, "key", "proxy_key.pem", "key file")
+	flag.StringVar(&originCertFile, "origincert", "server_cert.pem", "origin certificate file")
 	flag.Parse()
 }
 
@@ -55,7 +57,7 @@ func newProxy(addr, cert, serverName string) (*httputil.ReverseProxy, error) {
 }
 
 func main() {
-	proxy, err := newProxy(origin, certFile, "localhost")
+	proxy, err := newProxy(origin, originCertFile, "localhost")
 	if err != nil {
 		log.Fatal(err)
 	}

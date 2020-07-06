@@ -7,9 +7,10 @@ OBJS    := $(DIST)/echo \
 		   $(DIST)/server
 PB_SRCS := chat/*.proto
 PB_OBJS := chat/*.pb.go
-CERT    := cert.pem
-KEYFILE := key.pem
-MK_CERT := $(GOROOT)/src/crypto/tls/generate_cert.go
+
+CERTS        := $(DIST)/proxy_cert.pem $(DIST)/server_cert.pem
+KEYS         := $(CERTS:%_cert.pem=%_key.pem)
+OPENSSL_ARGS := -newkey rsa:2048 -new -nodes -x509 -days 3650 -subj "/C=US/ST=Washington/L=Snoqualmie/O=$(USER)/OU=Development/CN=localhost"
 
 $(DIST)/%: ./% %/*.go | $(DIST)
 	go build -o $@ ./$<
@@ -17,8 +18,8 @@ $(DIST)/%: ./% %/*.go | $(DIST)
 $(DIST):
 	mkdir -p $(DIST)
 
-$(CERT):
-	go run $(MK_CERT) -host localhost
+%_cert.pem:
+	openssl req $(OPENSSL_ARGS) -out $@ -keyout $(@:%_cert.pem=%_key.pem)
 
 $(PB_OBJS): $(PB_SRCS)
 	protoc -I chat/ $^ --go_out=chat --go_opt=paths=source_relative --go-grpc_out=chat --go-grpc_opt=paths=source_relative
@@ -27,7 +28,7 @@ $(PB_OBJS): $(PB_SRCS)
 
 all: build
 
-build: $(PB_OBJS) $(OBJS) $(CERT)
+build: $(PB_OBJS) $(OBJS) $(CERTS)
 
 test: $(PB_OBJS) $(PB_SRCS)
 	go test ./...
@@ -36,5 +37,5 @@ clean:
 	-rm $(PB_OBJS) $(OBJS)
 
 distclean: clean
-	-rm $(CERT) $(KEYFILE)
+	-rm $(CERTS) $(KEYS)
 	-rm -rf $(DIST)
