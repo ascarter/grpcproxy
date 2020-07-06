@@ -101,7 +101,7 @@ Send a message and receive it back. By default, it will send to server. Use `-ad
 make
 cd dist
 ./server &
-.proxy &
+./proxy &
 ./echo -cert proxy_cert.pem -address :50050
 ```
 
