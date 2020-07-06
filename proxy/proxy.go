@@ -2,15 +2,18 @@
 package main
 
 import (
+	"crypto/tls"
+	"crypto/x509"
+	"errors"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 
-	"github.com/ascarter/grpcproxy/chat"
 	"golang.org/x/net/http2"
 )
 
@@ -25,14 +28,13 @@ var (
 func init() {
 	flag.StringVar(&address, "address", ":50050", "listen address")
 	flag.StringVar(&origin, "origin", ":50051", "proxy origin")
-	flag.StringVar(&certFile, "cert", "proxy_cert.pem", "certificate file")
-	flag.StringVar(&keyFile, "key", "proxy_key.pem", "key file")
-	flag.StringVar(&originCertFile, "origincert", "server_cert.pem", "origin certificate file")
+	flag.StringVar(&certFile, "cert", "cert.pem", "certificate file")
+	flag.StringVar(&keyFile, "key", "key.pem", "key file")
 	flag.Parse()
 }
 
 // newProxy returns a reverse proxy for addr
-func newProxy(addr, cert, serverName string) (*httputil.ReverseProxy, error) {
+func newProxy(addr, cert string) (*httputil.ReverseProxy, error) {
 	o := url.URL{Scheme: "https", Host: addr}
 
 	director := func(req *http.Request) {
@@ -42,12 +44,23 @@ func newProxy(addr, cert, serverName string) (*httputil.ReverseProxy, error) {
 		req.URL.Host = o.Host
 	}
 
-	tlsConfig, err := chat.NewClientTLSConfig(cert, serverName)
+	crt, err := ioutil.ReadFile(cert)
 	if err != nil {
 		return nil, err
 	}
 
-	transport := &http.Transport{TLSClientConfig: tlsConfig}
+	cp := x509.NewCertPool()
+	if !cp.AppendCertsFromPEM(crt) {
+		return nil, errors.New("credentials: failed to append certificates")
+	}
+
+	transport := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: false,
+			ServerName:         "localhost",
+			RootCAs:            cp,
+		},
+	}
 	http2.ConfigureTransport(transport)
 
 	return &httputil.ReverseProxy{
@@ -57,7 +70,7 @@ func newProxy(addr, cert, serverName string) (*httputil.ReverseProxy, error) {
 }
 
 func main() {
-	proxy, err := newProxy(origin, originCertFile, "localhost")
+	proxy, err := newProxy(origin, certFile)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -89,15 +102,7 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	tlsConfig, err := chat.NewServerTLSConfig(certFile, keyFile, "localhost")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	s := &http.Server{
-		Handler:   mux,
-		TLSConfig: tlsConfig,
-	}
+	s := &http.Server{Handler: mux}
 
 	log.Printf("Proxy forwarding %v => %v", address, origin)
 	log.Fatal(s.ServeTLS(lis, certFile, keyFile))

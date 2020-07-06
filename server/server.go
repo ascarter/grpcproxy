@@ -20,8 +20,8 @@ var (
 
 func init() {
 	flag.StringVar(&address, "address", ":50051", "listen address")
-	flag.StringVar(&certFile, "cert", "server_cert.pem", "certificate file")
-	flag.StringVar(&keyFile, "key", "server_key.pem", "key file")
+	flag.StringVar(&certFile, "cert", "cert.pem", "certificate file")
+	flag.StringVar(&keyFile, "key", "key.pem", "key file")
 	flag.Parse()
 }
 
@@ -53,12 +53,12 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	tlsConfig, err := chat.NewServerTLSConfig(certFile, keyFile, "localhost")
+	creds, err := credentials.NewServerTLSFromFile(certFile, keyFile)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	s := grpc.NewServer(grpc.Creds(credentials.NewTLS(tlsConfig)))
+	s := grpc.NewServer(grpc.Creds(creds))
 	chat.RegisterGreeterServer(s, &greeterServer{})
 	chat.RegisterEchoServer(s, &echoServer{})
 

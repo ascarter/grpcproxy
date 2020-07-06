@@ -28,14 +28,14 @@ func init() {
 }
 
 func main() {
-	tlsConfig, err := chat.NewClientTLSConfig(certFile, "localhost")
+	// Set up a connection to the server.
+	creds, err := credentials.NewClientTLSFromFile(certFile, "localhost")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("unable to create credentials: %v", err)
 	}
 
-	// Set up a connection to the server.
 	log.Printf("Connection %v", address)
-	conn, err := grpc.Dial(address, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)), grpc.WithBlock())
+	conn, err := grpc.Dial(address, grpc.WithTransportCredentials(creds))
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}

@@ -8,7 +8,7 @@ OBJS    := $(DIST)/echo \
 PB_SRCS := chat/*.proto
 PB_OBJS := chat/*.pb.go
 
-CERTS        := $(DIST)/proxy_cert.pem $(DIST)/server_cert.pem
+CERTS        := $(DIST)/cert.pem
 KEYS         := $(CERTS:%_cert.pem=%_key.pem)
 OPENSSL_ARGS := -newkey rsa:2048 -new -nodes -x509 -days 3650 -subj "/C=US/ST=Washington/L=Snoqualmie/O=$(USER)/OU=Development/CN=localhost"
 
@@ -18,8 +18,8 @@ $(DIST)/%: ./% %/*.go | $(DIST)
 $(DIST):
 	mkdir -p $(DIST)
 
-%_cert.pem:
-	openssl req $(OPENSSL_ARGS) -out $@ -keyout $(@:%_cert.pem=%_key.pem)
+%cert.pem:
+	openssl req $(OPENSSL_ARGS) -out $@ -keyout $(@:%cert.pem=%key.pem)
 
 $(PB_OBJS): $(PB_SRCS)
 	protoc -I chat/ $^ --go_out=chat --go_opt=paths=source_relative --go-grpc_out=chat --go-grpc_opt=paths=source_relative

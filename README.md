@@ -42,8 +42,8 @@ By default, server listens on `:50051` and looks for `server_cert.pem` and `serv
 | Flag | Use |
 | ---- | --- |
 |`-address string`|listen address (default ":50051")|
-|`-cert string`|certificate file (default "server_cert.pem")
-|`-key string`|key file (default "server_key.pem")|
+|`-cert string`|certificate file (default "cert.pem")
+|`-key string`|key file (default "key.pem")|
 
 ### Proxy
 
@@ -56,9 +56,8 @@ By default, proxy listens on `:50050` and looks for `proxy_cert.pem` and `proxy_
 | Flag | Use |
 | ---- | --- |
 |`-address string`|listen address (default ":50050")|
-|` -cert string`|certificate file (default "proxy_cert.pem")
-|`-key string`|key file (default "proxy_key.pem")|
-|`-origincert string`|origin certificate file (default "server_cert.pem")|
+|` -cert string`|certificate file (default "cert.pem")
+|`-key string`|key file (default "key.pem")|
 |`-origin string`|proxy origin (default ":50051")|
 
 ### hello
@@ -102,7 +101,7 @@ make
 cd dist
 ./server &
 ./proxy &
-./echo -cert proxy_cert.pem -address :50050
+./echo -address :50050
 ```
 
 ## References
