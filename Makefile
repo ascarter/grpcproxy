@@ -8,7 +8,7 @@ OBJS    := $(DIST)/echo \
 PB_SRCS := chat/*.proto
 PB_OBJS := chat/*.pb.go
 
-CERTS        := $(DIST)/cert.pem
+CERTS        := $(DIST)/cert.pem $(DIST)/server_cert.pem
 KEYS         := $(CERTS:%_cert.pem=%_key.pem)
 OPENSSL_ARGS := -newkey rsa:2048 -new -nodes -x509 -days 3650 -subj "/C=US/ST=Washington/L=Snoqualmie/O=$(USER)/OU=Development/CN=localhost"
 

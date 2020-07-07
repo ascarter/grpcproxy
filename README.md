@@ -47,17 +47,18 @@ By default, server listens on `:50051` and looks for `server_cert.pem` and `serv
 
 ### Proxy
 
-By default, proxy listens on `:50050` and looks for `proxy_cert.pem` and `proxy_key.pem` in the current directory:
+By default, proxy listens on `:50050` and looks for `cert.pem` and `key.pem` in the current directory for the listener. For the orign connection, by default it looks for the same `cert.pem`. The origin cert needs to match the cert the server uses:
 
 ```
-./dist/server
+./dist/proxy
 ```
 
 | Flag | Use |
 | ---- | --- |
 |`-address string`|listen address (default ":50050")|
-|` -cert string`|certificate file (default "cert.pem")
+|`-cert string`|certificate file (default "cert.pem")
 |`-key string`|key file (default "key.pem")|
+|`-origincert string`|origin certificate file (default "cert.pem")
 |`-origin string`|proxy origin (default ":50051")|
 
 ### hello
