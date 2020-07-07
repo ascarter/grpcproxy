@@ -1,24 +1,21 @@
 GOROOT ?= $(shell go env GOROOT)
 
 DIST    := dist
-OBJS    := $(DIST)/echo \
-		   $(DIST)/hello \
-		   $(DIST)/proxy \
-		   $(DIST)/server
+OBJS    := $(addprefix $(DIST)/,$(notdir $(wildcard cmd/*)))
 PB_SRCS := chat/*.proto
 PB_OBJS := chat/*.pb.go
+CERTS   := cert.pem
+KEYS    := $(CERTS:%cert.pem=%key.pem)
 
-CERTS        := $(DIST)/cert.pem $(DIST)/server_cert.pem
-KEYS         := $(CERTS:%_cert.pem=%_key.pem)
 OPENSSL_ARGS := -newkey rsa:2048 -new -nodes -x509 -days 3650 -subj "/C=US/ST=Washington/L=Snoqualmie/O=$(USER)/OU=Development/CN=localhost"
 
-$(DIST)/%: ./% %/*.go | $(DIST)
+$(DIST)/%: ./cmd/% cmd/%/*.go | $(DIST)
 	go build -o $@ ./$<
 
 $(DIST):
 	mkdir -p $(DIST)
 
-%cert.pem:
+%.pem:
 	openssl req $(OPENSSL_ARGS) -out $@ -keyout $(@:%cert.pem=%key.pem)
 
 $(PB_OBJS): $(PB_SRCS)

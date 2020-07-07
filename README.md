@@ -23,7 +23,7 @@ A Makefile provides the following targets:
 
 | Target | Use |
 | ------ | --- |
-|*build*|Generate pb.go files from proto, a server and proxy keypair, and build all clients, proxy, and server|
+|*build*|Generate pb.go files from proto, a server and proxy keypair, and builds the client, proxy, and server|
 |*clean*|Remove generated files|
 |*distclean*|Remove everything including keypairs|
 
@@ -33,7 +33,7 @@ The server and proxy should either run in separate shells or run in the backgrou
 
 ### Server
 
-By default, server listens on `:50051` and looks for `server_cert.pem` and `server_key.pem` in the current directory.
+By default, server listens on `:50051` and looks for `cert.pem` and `key.pem` in the current directory.
 
 ```
 ./dist/server
@@ -47,7 +47,7 @@ By default, server listens on `:50051` and looks for `server_cert.pem` and `serv
 
 ### Proxy
 
-By default, proxy listens on `:50050` and looks for `cert.pem` and `key.pem` in the current directory for the listener. For the orign connection, by default it looks for the same `cert.pem`. The origin cert needs to match the cert the server uses:
+By default, proxy listens on `:50050` and looks for `cert.pem` and `key.pem` in the current directory for the server side of the proxy. For the orign connection, by default it looks for the same `cert.pem` as the ca cert. The origin cert needs to match the cert the server uses:
 
 ```
 ./dist/proxy
@@ -58,52 +58,35 @@ By default, proxy listens on `:50050` and looks for `cert.pem` and `key.pem` in 
 |`-address string`|listen address (default ":50050")|
 |`-cert string`|certificate file (default "cert.pem")
 |`-key string`|key file (default "key.pem")|
-|`-origincert string`|origin certificate file (default "cert.pem")
+|`-cacert string`|ca certificate file (default "cert.pem")
 |`-origin string`|proxy origin (default ":50051")|
 
-### hello
+### client
 
-Send a name and receive a greeting. By default, it will send to server. Use `-address` to use proxy
+The client supports two commands:
+
+hello <name>
+echo <string>
+
+By default, it will send to server on `:50051`. Use `-address` to use proxy. The client uses `cert.pem` as the ca cert by default.
 
 ```
 # Send to server
-./dist/hello bob
+./dist/client hello bob
 
 # Send to proxy
-./dist/hello -address :50050 sally
+./dist/client -address :50050 echo where are you sally?
 ```
 
 | Flag | Use |
 | ---- | --- |
 |`-address string`|server address (default ":50051")|
-|` -cert string`|certificate file (default "cert.pem")
+|`-cacert string`|ca certificate file (default "cert.pem")
 
-### echo
 
-Send a message and receive it back. By default, it will send to server. Use `-address` to use proxy
+## Multiple Certificates
 
-```
-# Send to server
-./dist/echo "Echo me"
-
-# Send to proxy
-./dist/echo -address :50050 "Echo me via proxy"
-```
-
-| Flag | Use |
-| ---- | --- |
-|`-address string`|server address (default ":50051")|
-|` -cert string`|certificate file (default "cert.pem")
-
-## Example
-
-```
-make
-cd dist
-./server &
-./proxy &
-./echo -address :50050
-```
+Running `make` will generate a self-signed keypair (`cert.pem` and `key.pem`). If mutliple certs are desired, use the openssl command in the makefile to generate other key pairs and pass them to client, server, or proxy. If you have a local ca, you can supply that cert and sign separate server certificates for the proxy and server.
 
 ## References
 

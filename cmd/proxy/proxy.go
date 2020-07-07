@@ -18,11 +18,11 @@ import (
 )
 
 var (
-	certFile       string
-	keyFile        string
-	originCertFile string
-	address        string
-	origin         string
+	certFile   string
+	keyFile    string
+	caCertFile string
+	address    string
+	origin     string
 )
 
 func init() {
@@ -30,12 +30,13 @@ func init() {
 	flag.StringVar(&origin, "origin", ":50051", "proxy origin")
 	flag.StringVar(&certFile, "cert", "cert.pem", "certificate file")
 	flag.StringVar(&keyFile, "key", "key.pem", "key file")
-	flag.StringVar(&originCertFile, "origincert", "cert.pem", "origin certificate file")
+	flag.StringVar(&caCertFile, "cacert", "cert.pem", "ca certificate file")
 	flag.Parse()
 }
 
 // newProxy returns a reverse proxy for addr
-func newProxy(addr, cert string) (*httputil.ReverseProxy, error) {
+func newProxy(addr, cacert string) (*httputil.ReverseProxy, error) {
+	// Origin URL
 	o := url.URL{Scheme: "https", Host: addr}
 
 	director := func(req *http.Request) {
@@ -45,21 +46,26 @@ func newProxy(addr, cert string) (*httputil.ReverseProxy, error) {
 		req.URL.Host = o.Host
 	}
 
-	crt, err := ioutil.ReadFile(cert)
+	// Add provided ca root ca's
+	crt, err := ioutil.ReadFile(cacert)
 	if err != nil {
 		return nil, err
 	}
 
-	cp := x509.NewCertPool()
-	if !cp.AppendCertsFromPEM(crt) {
-		return nil, errors.New("credentials: failed to append certificates")
+	roots, err := x509.SystemCertPool()
+	if err != nil {
+		return nil, err
+	}
+
+	if !roots.AppendCertsFromPEM(crt) {
+		return nil, errors.New("credentials: failed to append ca certificates")
 	}
 
 	transport := &http.Transport{
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: false,
 			ServerName:         "localhost",
-			RootCAs:            cp,
+			RootCAs:            roots,
 		},
 	}
 	http2.ConfigureTransport(transport)
@@ -71,7 +77,7 @@ func newProxy(addr, cert string) (*httputil.ReverseProxy, error) {
 }
 
 func main() {
-	proxy, err := newProxy(origin, originCertFile)
+	proxy, err := newProxy(origin, caCertFile)
 	if err != nil {
 		log.Fatal(err)
 	}

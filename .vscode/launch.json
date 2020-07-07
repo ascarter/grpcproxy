@@ -9,13 +9,15 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "${workspaceFolder}/proxy",
+            "program": "${workspaceFolder}/cmd/proxy",
             "env": {},
             "args": [
                 "-cert",
-                "${workspaceFolder}/cert.pem",
+                "${workspaceFolder}/dist/cert.pem",
                 "-key",
-                "${workspaceFolder}/key.pem",
+                "${workspaceFolder}/dist/key.pem",
+                "-cacert",
+                "${workspaceFolder}/dist/cert.pem"
             ]
         },
         {
@@ -23,45 +25,28 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "${workspaceFolder}/server",
+            "program": "${workspaceFolder}/cmd/server",
             "env": {},
             "args": [
                 "-cert",
-                "${workspaceFolder}/cert.pem",
+                "${workspaceFolder}/dist/cert.pem",
                 "-key",
-                "${workspaceFolder}/key.pem",
+                "${workspaceFolder}/dist/key.pem",
             ]
         },
         {
-            "name": "Launch hello",
+            "name": "Launch client",
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "${workspaceFolder}/hello",
+            "program": "${workspaceFolder}/cmd/client",
             "env": {},
             "args": [
                 "-address",
                 ":50050",
-                "-cert",
-                "${workspaceFolder}/cert.pem",
-                "-key",
-                "${workspaceFolder}/key.pem",
-            ]
-        },
-        {
-            "name": "Launch echo",
-            "type": "go",
-            "request": "launch",
-            "mode": "auto",
-            "program": "${workspaceFolder}/echo",
-            "env": {},
-            "args": [
-                "-address",
-                ":50050",
-                "-cert",
-                "${workspaceFolder}/cert.pem",
-                "-key",
-                "${workspaceFolder}/key.pem",
+                "-cacert",
+                "${workspaceFolder}/dist/cert.pem",
+                "hello"
             ]
         }
     ]
