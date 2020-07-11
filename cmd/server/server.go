@@ -10,6 +10,7 @@ import (
 	"github.com/ascarter/grpcproxy/chat"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/reflection"
 )
 
 var (
@@ -61,6 +62,9 @@ func main() {
 	s := grpc.NewServer(grpc.Creds(creds))
 	chat.RegisterGreeterServer(s, &greeterServer{})
 	chat.RegisterEchoServer(s, &echoServer{})
+
+	// Enable reflection for grpcurl
+	reflection.Register(s)
 
 	log.Printf("Listening on %v", address)
 	log.Fatal(s.Serve(lis))

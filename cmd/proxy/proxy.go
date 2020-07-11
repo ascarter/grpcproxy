@@ -2,6 +2,7 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
@@ -14,7 +15,10 @@ import (
 	"net/http/httputil"
 	"net/url"
 
+	"github.com/ascarter/grpcproxy/chat"
 	"golang.org/x/net/http2"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 var (
@@ -76,6 +80,17 @@ func newProxy(addr, cacert string) (*httputil.ReverseProxy, error) {
 	}, nil
 }
 
+// healthServer is used to implement chat.HealthServer
+type healthServer struct {
+	chat.UnimplementedHealthServer
+}
+
+// Status implements chat.HealthServer Status request
+func (s *healthServer) Status(context.Context, *chat.StatusRequest) (*chat.StatusReply, error) {
+	log.Printf("Received StatusRequest")
+	return &chat.StatusReply{Code: http.StatusOK, Message: "OK"}, nil
+}
+
 func main() {
 	proxy, err := newProxy(origin, caCertFile)
 	if err != nil {
@@ -83,6 +98,7 @@ func main() {
 	}
 
 	proxyHandle := func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("Forwarding request for %s", r.RequestURI)
 		dump, err := httputil.DumpRequest(r, true)
 		if err != nil {
 			http.Error(w, fmt.Sprint(err), http.StatusInternalServerError)
@@ -92,9 +108,18 @@ func main() {
 		proxy.ServeHTTP(w, r)
 	}
 
+	// Create a gRPC server for internal messages
+	gs := grpc.NewServer()
+	chat.RegisterHealthServer(gs, &healthServer{})
+
+	// Enable reflection for grpcurl
+	reflection.Register(gs)
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/chat.Greeter/", proxyHandle)
 	mux.HandleFunc("/chat.Echo/", proxyHandle)
+	mux.Handle("/grpc.reflection.v1alpha.ServerReflection/", gs)
+	mux.Handle("/internal.Health/", gs)
 	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		if req.URL.Path != "/" {
 			log.Printf("Not found: %v", req.URL)

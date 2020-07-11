@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+option go_package = "github.com/ascarter/grpcproxy/chat";
+
+package internal;
+
+// The Health service reports status monitoring for an app
+service Health {
+  // Status requests app status
+  rpc Status (StatusRequest) returns (StatusReply) {}
+}
+
+// A StatusRequest requests current app status
+message StatusRequest {}
+
+// An StatusReply reports current status
+message StatusReply {
+  int32 code = 1;
+  string message = 2;
+}

@@ -71,10 +71,25 @@ func hello(conn *grpc.ClientConn, args []string) error {
 	return nil
 }
 
+func status(conn *grpc.ClientConn, args []string) error {
+	c := chat.NewHealthClient(conn)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	r, err := c.Status(ctx, &chat.StatusRequest{})
+	if err != nil {
+		return err
+	}
+
+	log.Printf("Status: %d %s", r.GetCode(), r.GetMessage())
+	return nil
+}
+
 func main() {
 	// Verify subcommand provided
 	if len(flag.Args()) < 1 {
-		log.Fatal("command required (hello|echo)")
+		log.Fatal("command required (hello|echo|status)")
 	}
 
 	// Set up a connection to the server
@@ -98,6 +113,10 @@ func main() {
 		}
 	case "echo":
 		if err := echo(conn, flag.Args()[1:]); err != nil {
+			log.Fatal(err)
+		}
+	case "status":
+		if err := status(conn, flag.Args()[1:]); err != nil {
 			log.Fatal(err)
 		}
 	}
