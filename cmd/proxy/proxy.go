@@ -91,6 +91,15 @@ func (s *healthServer) Status(context.Context, *chat.StatusRequest) (*chat.Statu
 	return &chat.StatusReply{Code: http.StatusOK, Message: "OK"}, nil
 }
 
+func dumpRequest(r *http.Request) error {
+	dump, err := httputil.DumpRequest(r, true)
+	if err != nil {
+		return err
+	}
+	log.Print(string(dump))
+	return nil
+}
+
 func main() {
 	proxy, err := newProxy(origin, caCertFile)
 	if err != nil {
@@ -99,12 +108,9 @@ func main() {
 
 	proxyHandle := func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Forwarding request for %s", r.RequestURI)
-		dump, err := httputil.DumpRequest(r, true)
-		if err != nil {
-			http.Error(w, fmt.Sprint(err), http.StatusInternalServerError)
-			return
+		if err := dumpRequest(r); err != nil {
+			log.Print(err)
 		}
-		log.Print(string(dump))
 		proxy.ServeHTTP(w, r)
 	}
 
