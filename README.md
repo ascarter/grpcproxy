@@ -88,6 +88,25 @@ By default, it will send to server on `:50051`. Use `-address` to use proxy. The
 
 Running `make` will generate a self-signed keypair (`cert.pem` and `key.pem`). If mutliple certs are desired, use the openssl command in the makefile to generate other key pairs and pass them to client, server, or proxy. If you have a local ca, you can supply that cert and sign separate server certificates for the proxy and server.
 
+## Ad-Hoc
+
+Using gRPC server reflection, tools like [grpcurl](https://github.com/fullstorydev/grpcurl) can be used for making ad-hoc requests.
+
+Example:
+
+```
+grpcurl -cacert ./cert.pem localhost:50051 list
+grpcurl -cacert ./cert.pem -d '{"name": "Bob"}' localhost:50051 chat.Greeter/SayHello
+```
+
+Response is in JSON:
+
+```
+{
+  "message": "Hello Bob"
+}
+```
+
 ## References
 
 * [protocol-buffers](https://developers.google.com/protocol-buffers/)
