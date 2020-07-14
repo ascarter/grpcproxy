@@ -44,6 +44,7 @@ func newProxy(addr, cacert string) (*httputil.ReverseProxy, error) {
 	o := url.URL{Scheme: "https", Host: addr}
 
 	director := func(req *http.Request) {
+		req.Header.Add("X-Forwarded-Proto", req.Proto)
 		req.Header.Add("X-Forwarded-Host", req.Host)
 		req.Header.Add("X-Origin-Host", o.Host)
 		req.URL.Scheme = o.Scheme

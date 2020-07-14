@@ -4,8 +4,10 @@ package main
 import (
 	"context"
 	"flag"
+	"io"
 	"log"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/ascarter/grpcproxy/chat"
@@ -21,13 +23,25 @@ const (
 var (
 	caCertFile string
 	address    string
+	commands   map[string]Command
 )
 
 func init() {
 	flag.StringVar(&address, "address", ":50051", "server address")
 	flag.StringVar(&caCertFile, "cacert", "cert.pem", "ca certificate file")
 	flag.Parse()
+
+	commands = map[string]Command{
+		"hello":  hello,
+		"lots":   lots,
+		"many":   many,
+		"echo":   echo,
+		"status": status,
+	}
 }
+
+// A Command is the API for a sub-command
+type Command func(*grpc.ClientConn, []string) error
 
 func echo(conn *grpc.ClientConn, args []string) error {
 	c := chat.NewEchoClient(conn)
@@ -71,6 +85,86 @@ func hello(conn *grpc.ClientConn, args []string) error {
 	return nil
 }
 
+func lots(conn *grpc.ClientConn, args []string) error {
+	c := chat.NewGreeterClient(conn)
+
+	// Contact the server and print out its response.
+	name := defaultName
+	if len(args) > 0 {
+		name = strings.Join(args, " ")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	r, err := c.LotsOfReplies(ctx, &chat.HelloRequest{Name: name})
+	if err != nil {
+		return err
+	}
+
+	for {
+		m, err := r.Recv()
+		if err == io.EOF {
+			// end of stream
+			break
+		}
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Printf("Greeting: %s", m.GetMessage())
+	}
+
+	return nil
+}
+
+func many(conn *grpc.ClientConn, args []string) error {
+	c := chat.NewGreeterClient(conn)
+
+	if len(args) < 1 {
+		args = append(args, defaultName)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	stream, err := c.ManyHellos(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Send requests and receive responses concurrently
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	// Sending requests
+	go func() {
+		defer wg.Done()
+		for _, name := range args {
+			stream.Send(&chat.HelloRequest{Name: name})
+		}
+		stream.CloseSend()
+	}()
+
+	// Receive messages
+	go func() {
+		defer wg.Done()
+		for {
+			res, err := stream.Recv()
+			if err == io.EOF {
+				return
+			}
+			if err != nil {
+				log.Fatal(err)
+			}
+			log.Printf("Greeting: %s", res.GetMessage())
+		}
+	}()
+
+	wg.Wait()
+	log.Print("Streaming terminated")
+	return nil
+}
+
 func status(conn *grpc.ClientConn, args []string) error {
 	c := chat.NewHealthClient(conn)
 
@@ -106,18 +200,11 @@ func main() {
 	defer conn.Close()
 
 	// Execute command
-	switch flag.Args()[0] {
-	case "hello":
-		if err := hello(conn, flag.Args()[1:]); err != nil {
+	if cmd, ok := commands[flag.Args()[0]]; ok {
+		if err := cmd(conn, flag.Args()[1:]); err != nil {
 			log.Fatal(err)
 		}
-	case "echo":
-		if err := echo(conn, flag.Args()[1:]); err != nil {
-			log.Fatal(err)
-		}
-	case "status":
-		if err := status(conn, flag.Args()[1:]); err != nil {
-			log.Fatal(err)
-		}
+	} else {
+		log.Fatalf("invalid command %s", flag.Args()[0])
 	}
 }

@@ -4,6 +4,8 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
+	"io"
 	"log"
 	"net"
 
@@ -40,6 +42,38 @@ type echoServer struct {
 func (s *greeterServer) SayHello(ctx context.Context, in *chat.HelloRequest) (*chat.HelloReply, error) {
 	log.Printf("Received HelloRequest: %v", in.GetName())
 	return &chat.HelloReply{Message: "Hello " + in.GetName()}, nil
+}
+
+// LotsOfReplices repeaths greeting 5 times
+func (s *greeterServer) LotsOfReplies(in *chat.HelloRequest, streamRes chat.Greeter_LotsOfRepliesServer) error {
+	log.Printf("Received LotsOfReplies for HelloRequest: %v", in.GetName())
+
+	// Return greeting 5 times
+	for i := 0; i < 5; i++ {
+		log.Printf("--> sending reply %d for %v", i, in.GetName())
+		res := chat.HelloReply{Message: fmt.Sprintf("Hello %v - %d", in.GetName(), i)}
+		streamRes.Send(&res)
+	}
+	return nil
+}
+
+// ManyHellos sends hello to many names
+func (s *greeterServer) ManyHellos(in chat.Greeter_ManyHellosServer) error {
+	log.Printf("Received ManyHellos for HelloRequest")
+	for {
+		req, err := in.Recv()
+		if err == io.EOF {
+			// end of receiving requests
+			log.Print("--> end receiving requests and send response")
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		log.Printf("--> sending reply for %v", req.GetName())
+		in.Send(&chat.HelloReply{Message: "Hello " + req.GetName()})
+	}
+	return nil
 }
 
 // Replay impelments chat.EchoServer
