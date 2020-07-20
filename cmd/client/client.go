@@ -28,7 +28,7 @@ var (
 
 func init() {
 	flag.StringVar(&address, "address", ":50051", "server address")
-	flag.StringVar(&caCertFile, "cacert", "cert.pem", "ca certificate file")
+	flag.StringVar(&caCertFile, "cacert", "ca.crt", "ca certificate file")
 	flag.Parse()
 
 	commands = map[string]Command{

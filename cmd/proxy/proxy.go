@@ -32,9 +32,9 @@ var (
 func init() {
 	flag.StringVar(&address, "address", ":50050", "listen address")
 	flag.StringVar(&origin, "origin", ":50051", "proxy origin")
-	flag.StringVar(&certFile, "cert", "cert.pem", "certificate file")
-	flag.StringVar(&keyFile, "key", "key.pem", "key file")
-	flag.StringVar(&caCertFile, "cacert", "cert.pem", "ca certificate file")
+	flag.StringVar(&certFile, "cert", "proxy.crt", "certificate file")
+	flag.StringVar(&keyFile, "key", "proxy.key", "key file")
+	flag.StringVar(&caCertFile, "cacert", "ca.crt", "ca certificate file")
 	flag.Parse()
 }
 

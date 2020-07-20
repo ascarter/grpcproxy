@@ -23,8 +23,8 @@ var (
 
 func init() {
 	flag.StringVar(&address, "address", ":50051", "listen address")
-	flag.StringVar(&certFile, "cert", "cert.pem", "certificate file")
-	flag.StringVar(&keyFile, "key", "key.pem", "key file")
+	flag.StringVar(&certFile, "cert", "server.crt", "certificate file")
+	flag.StringVar(&keyFile, "key", "server.key", "key file")
 	flag.Parse()
 }
 
