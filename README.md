@@ -4,6 +4,8 @@ Example project with a gRPC client, server, and proxy. Demonstrates a reverse pr
 
 The project includes a server that handles the chat.Greeter and chat.Echo services. A reverse grpc proxy supports forwarding the chat services. Two clients - echo and hello will send an echo request or a hello request.
 
+This project demonstrates using mTLS for all connections.
+
 ## Requirements
 
 Install [protobuf compiler](https://github.com/protocolbuffers/protobuf/releases)
@@ -33,33 +35,19 @@ The server and proxy should either run in separate shells or run in the backgrou
 
 ### Server
 
-By default, server listens on `:50051` and looks for `cert.pem` and `key.pem` in the current directory.
+By default, server listens on `:50051` and looks for certificates in the current directory.
 
 ```
 ./dist/server
 ```
 
-| Flag | Use |
-| ---- | --- |
-|`-address string`|listen address (default ":50051")|
-|`-cert string`|certificate file (default "cert.pem")
-|`-key string`|key file (default "key.pem")|
-
 ### Proxy
 
-By default, proxy listens on `:50050` and looks for `cert.pem` and `key.pem` in the current directory for the server side of the proxy. For the orign connection, by default it looks for the same `cert.pem` as the ca cert. The origin cert needs to match the cert the server uses:
+By default, proxy listens on `:50050`, forwards to `:50051` and looks for certficates in the current directory:
 
 ```
 ./dist/proxy
 ```
-
-| Flag | Use |
-| ---- | --- |
-|`-address string`|listen address (default ":50050")|
-|`-cert string`|certificate file (default "cert.pem")
-|`-key string`|key file (default "key.pem")|
-|`-cacert string`|ca certificate file (default "cert.pem")
-|`-origin string`|proxy origin (default ":50051")|
 
 ### client
 
@@ -68,7 +56,7 @@ The client supports two commands:
 hello <name>
 echo <string>
 
-By default, it will send to server on `:50051`. Use `-address` to use proxy. The client uses `cert.pem` as the ca cert by default.
+By default, it will send to server on `:50051`. Use `-address` to use proxy. The client uses certificates in the current directory by default.
 
 ```
 # Send to server
@@ -78,15 +66,9 @@ By default, it will send to server on `:50051`. Use `-address` to use proxy. The
 ./dist/client -address :50050 echo where are you sally?
 ```
 
-| Flag | Use |
-| ---- | --- |
-|`-address string`|server address (default ":50051")|
-|`-cacert string`|ca certificate file (default "cert.pem")
+## Certificates
 
-
-## Multiple Certificates
-
-Running `make` will generate a self-signed keypair (`cert.pem` and `key.pem`). If mutliple certs are desired, use the openssl command in the makefile to generate other key pairs and pass them to client, server, or proxy. If you have a local ca, you can supply that cert and sign separate server certificates for the proxy and server.
+Running `make keys` will generate a self-signed keypair (`ca.crt` and `ca.key`) for a self-signed CA. Keypairs are created and signed by the CA for server, proxy, and client.
 
 ## Ad-Hoc
 
@@ -95,8 +77,8 @@ Using gRPC server reflection, tools like [grpcurl](https://github.com/fullstoryd
 Example:
 
 ```
-grpcurl -cacert ./cert.pem localhost:50051 list
-grpcurl -cacert ./cert.pem -d '{"name": "Bob"}' localhost:50051 chat.Greeter/SayHello
+grpcurl -cacert ca.crt -cert client.crt -key client.key localhost:50051 list
+grpcurl -cacert ca.crt -cert client.crt -key client.key -d '{"name": "Bob"}' localhost:50051 chat.Greeter/SayHello
 ```
 
 Response is in JSON:
@@ -114,3 +96,6 @@ Response is in JSON:
 * [grpc-go](https://github.com/grpc/grpc-go)
 * [gRPC Go](https://grpc.io/docs/languages/go/)
 * [Language guide proto3](https://developers.google.com/protocol-buffers/docs/proto3)
+* [RFC 5246 - TLS](https://www.ietf.org/rfc/rfc5246.txt)
+* [Azure Self-Signed Certificates](https://docs.microsoft.com/en-us/azure/application-gateway/self-signed-certificates)
+* [Azure Configure Mutual TLS Auth](https://docs.microsoft.com/en-us/azure/app-service/app-service-web-configure-tls-mutual-auth)

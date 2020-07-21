@@ -4,11 +4,8 @@ package main
 import (
 	"context"
 	"crypto/tls"
-	"crypto/x509"
-	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -39,7 +36,7 @@ func init() {
 }
 
 // newProxy returns a reverse proxy for addr
-func newProxy(addr, cacert string) (*httputil.ReverseProxy, error) {
+func newProxy(addr, cacert, certfile, keyfile string) (*httputil.ReverseProxy, error) {
 	// Origin URL
 	o := url.URL{Scheme: "https", Host: addr}
 
@@ -51,26 +48,24 @@ func newProxy(addr, cacert string) (*httputil.ReverseProxy, error) {
 		req.URL.Host = o.Host
 	}
 
-	// Add provided ca root ca's
-	crt, err := ioutil.ReadFile(cacert)
+	// Add provided ca to root ca's
+	caPool, err := chat.NewCAPool(cacert)
 	if err != nil {
 		return nil, err
 	}
 
-	roots, err := x509.SystemCertPool()
+	// Present proxy cert as client cert
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
 		return nil, err
-	}
-
-	if !roots.AppendCertsFromPEM(crt) {
-		return nil, errors.New("credentials: failed to append ca certificates")
 	}
 
 	transport := &http.Transport{
 		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: false,
-			ServerName:         "localhost",
-			RootCAs:            roots,
+			ClientAuth:   tls.RequireAndVerifyClientCert,
+			Certificates: []tls.Certificate{cert},
+			ServerName:   "localhost",
+			RootCAs:      caPool,
 		},
 	}
 	http2.ConfigureTransport(transport)
@@ -102,7 +97,7 @@ func dumpRequest(r *http.Request) error {
 }
 
 func main() {
-	proxy, err := newProxy(origin, caCertFile)
+	proxy, err := newProxy(origin, caCertFile, certFile, keyFile)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -141,7 +136,23 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	s := &http.Server{Handler: mux}
+	// Create client CA pool
+	caPool, err := chat.NewCAPool(caCertFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Create server TLS config
+	tlsConfig := &tls.Config{
+		ClientCAs:  caPool,
+		ClientAuth: tls.RequireAndVerifyClientCert,
+	}
+
+	// Create server with TLS config
+	s := &http.Server{
+		Handler:   mux,
+		TLSConfig: tlsConfig,
+	}
 
 	log.Printf("Proxy forwarding %v => %v", address, origin)
 	log.Fatal(s.ServeTLS(lis, certFile, keyFile))

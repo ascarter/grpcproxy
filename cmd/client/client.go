@@ -3,6 +3,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"flag"
 	"io"
 	"log"
@@ -21,14 +22,19 @@ const (
 )
 
 var (
-	caCertFile string
-	address    string
-	commands   map[string]Command
+	caCertFile     string
+	clientCertFile string
+	clientKeyFile  string
+	address        string
+	commands       map[string]Command
 )
 
 func init() {
 	flag.StringVar(&address, "address", ":50051", "server address")
 	flag.StringVar(&caCertFile, "cacert", "ca.crt", "ca certificate file")
+	flag.StringVar(&clientCertFile, "clientcert", "client.crt", "client certificate file")
+	flag.StringVar(&clientKeyFile, "clientkey", "client.key", "client key file")
+
 	flag.Parse()
 
 	commands = map[string]Command{
@@ -186,11 +192,30 @@ func main() {
 		log.Fatal("command required (hello|echo|status)")
 	}
 
-	// Set up a connection to the server
-	creds, err := credentials.NewClientTLSFromFile(caCertFile, "localhost")
+	// Add provided ca to root ca's
+	caPool, err := chat.NewCAPool(caCertFile)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// Configure client TLS
+	tlsConfig := &tls.Config{
+		RootCAs:    caPool,
+		ServerName: "localhost",
+	}
+
+	// Check if client provided certificate/key
+	if clientCertFile != "" && clientKeyFile != "" {
+		cert, err := tls.LoadX509KeyPair(clientCertFile, clientKeyFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		tlsConfig.Certificates = []tls.Certificate{cert}
+	}
+
+	// Set up a connection to the server
+	creds := credentials.NewTLS(tlsConfig)
 
 	log.Printf("Connection %v", address)
 	conn, err := grpc.Dial(address, grpc.WithTransportCredentials(creds))

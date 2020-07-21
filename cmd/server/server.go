@@ -3,6 +3,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"flag"
 	"fmt"
 	"io"
@@ -16,15 +17,17 @@ import (
 )
 
 var (
-	certFile string
-	keyFile  string
-	address  string
+	certFile   string
+	keyFile    string
+	caCertFile string
+	address    string
 )
 
 func init() {
 	flag.StringVar(&address, "address", ":50051", "listen address")
 	flag.StringVar(&certFile, "cert", "server.crt", "certificate file")
 	flag.StringVar(&keyFile, "key", "server.key", "key file")
+	flag.StringVar(&caCertFile, "cacert", "ca.crt", "ca certificate file")
 	flag.Parse()
 }
 
@@ -88,11 +91,25 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	creds, err := credentials.NewServerTLSFromFile(certFile, keyFile)
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	// Create client CA pool
+	caPool, err := chat.NewCAPool(caCertFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Create server TLS config
+	tlsConfig := &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		ClientCAs:    caPool,
+		ClientAuth:   tls.RequireAndVerifyClientCert,
+	}
+
+	creds := credentials.NewTLS(tlsConfig)
 	s := grpc.NewServer(grpc.Creds(creds))
 	chat.RegisterGreeterServer(s, &greeterServer{})
 	chat.RegisterEchoServer(s, &echoServer{})
