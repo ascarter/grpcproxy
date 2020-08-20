@@ -21,13 +21,15 @@ var (
 	keyFile    string
 	caCertFile string
 	address    string
+	insecure   bool
 )
 
 func init() {
 	flag.StringVar(&address, "address", ":50051", "listen address")
-	flag.StringVar(&certFile, "cert", "server.crt", "certificate file")
-	flag.StringVar(&keyFile, "key", "server.key", "key file")
-	flag.StringVar(&caCertFile, "cacert", "ca.crt", "ca certificate file")
+	flag.StringVar(&certFile, "cert", "certificates/server.crt", "certificate file")
+	flag.StringVar(&keyFile, "key", "certificates/server.key", "key file")
+	flag.StringVar(&caCertFile, "cacert", "certificates/ca.crt", "ca certificate file")
+	flag.BoolVar(&insecure, "insecure", false, "run insecure")
 	flag.Parse()
 }
 
@@ -76,7 +78,6 @@ func (s *greeterServer) ManyHellos(in chat.Greeter_ManyHellosServer) error {
 		log.Printf("--> sending reply for %v", req.GetName())
 		in.Send(&chat.HelloReply{Message: "Hello " + req.GetName()})
 	}
-	return nil
 }
 
 // Replay impelments chat.EchoServer
@@ -91,26 +92,35 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
-	if err != nil {
-		log.Fatal(err)
+	var s *grpc.Server
+
+	if insecure {
+		log.Print("running insecure!")
+		s = grpc.NewServer()
+	} else {
+		cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// Create client CA pool
+		caPool, err := chat.NewCAPool(caCertFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// Create server TLS config
+		tlsConfig := &tls.Config{
+			Certificates: []tls.Certificate{cert},
+			ClientCAs:    caPool,
+			ClientAuth:   tls.RequireAndVerifyClientCert,
+		}
+
+		creds := credentials.NewTLS(tlsConfig)
+		s = grpc.NewServer(grpc.Creds(creds))
 	}
 
-	// Create client CA pool
-	caPool, err := chat.NewCAPool(caCertFile)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Create server TLS config
-	tlsConfig := &tls.Config{
-		Certificates: []tls.Certificate{cert},
-		ClientCAs:    caPool,
-		ClientAuth:   tls.RequireAndVerifyClientCert,
-	}
-
-	creds := credentials.NewTLS(tlsConfig)
-	s := grpc.NewServer(grpc.Creds(creds))
+	// Register API
 	chat.RegisterGreeterServer(s, &greeterServer{})
 	chat.RegisterEchoServer(s, &echoServer{})
 

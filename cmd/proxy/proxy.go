@@ -29,18 +29,19 @@ var (
 func init() {
 	flag.StringVar(&address, "address", ":50050", "listen address")
 	flag.StringVar(&origin, "origin", ":50051", "proxy origin")
-	flag.StringVar(&certFile, "cert", "proxy.crt", "certificate file")
-	flag.StringVar(&keyFile, "key", "proxy.key", "key file")
-	flag.StringVar(&caCertFile, "cacert", "ca.crt", "ca certificate file")
+	flag.StringVar(&certFile, "cert", "certificates/proxy.crt", "certificate file")
+	flag.StringVar(&keyFile, "key", "certificates/proxy.key", "key file")
+	flag.StringVar(&caCertFile, "cacert", "certificates/ca.crt", "ca certificate file")
 	flag.Parse()
 }
 
 // newProxy returns a reverse proxy for addr
 func newProxy(addr, cacert, certfile, keyfile string) (*httputil.ReverseProxy, error) {
 	// Origin URL
-	o := url.URL{Scheme: "https", Host: addr}
+	o := &url.URL{Scheme: "https", Host: addr}
 
 	director := func(req *http.Request) {
+		log.Printf("Forwarding %s -> %v", req.URL, o)
 		req.Header.Add("X-Forwarded-Proto", req.Proto)
 		req.Header.Add("X-Forwarded-Host", req.Host)
 		req.Header.Add("X-Origin-Host", o.Host)
@@ -62,7 +63,6 @@ func newProxy(addr, cacert, certfile, keyfile string) (*httputil.ReverseProxy, e
 
 	transport := &http.Transport{
 		TLSClientConfig: &tls.Config{
-			ClientAuth:   tls.RequireAndVerifyClientCert,
 			Certificates: []tls.Certificate{cert},
 			ServerName:   "localhost",
 			RootCAs:      caPool,
@@ -97,6 +97,8 @@ func dumpRequest(r *http.Request) error {
 }
 
 func main() {
+	log.Printf("Proxy forwarding %v => %v", address, origin)
+
 	proxy, err := newProxy(origin, caCertFile, certFile, keyFile)
 	if err != nil {
 		log.Fatal(err)
@@ -142,10 +144,17 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// Load cert
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// Create server TLS config
 	tlsConfig := &tls.Config{
-		ClientCAs:  caPool,
-		ClientAuth: tls.RequireAndVerifyClientCert,
+		Certificates: []tls.Certificate{cert},
+		ClientCAs:    caPool,
+		ClientAuth:   tls.RequireAndVerifyClientCert,
 	}
 
 	// Create server with TLS config
@@ -154,6 +163,5 @@ func main() {
 		TLSConfig: tlsConfig,
 	}
 
-	log.Printf("Proxy forwarding %v => %v", address, origin)
-	log.Fatal(s.ServeTLS(lis, certFile, keyFile))
+	log.Fatal(s.ServeTLS(lis, "", ""))
 }
