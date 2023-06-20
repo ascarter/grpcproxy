@@ -25,12 +25,11 @@ var (
 )
 
 func init() {
-	flag.StringVar(&address, "address", ":50051", "listen address")
+	flag.StringVar(&address, "address", ":8051", "listen address")
 	flag.StringVar(&certFile, "cert", "certificates/server.crt", "certificate file")
 	flag.StringVar(&keyFile, "key", "certificates/server.key", "key file")
 	flag.StringVar(&caCertFile, "cacert", "certificates/ca.crt", "ca certificate file")
 	flag.BoolVar(&insecure, "insecure", false, "run insecure")
-	flag.Parse()
 }
 
 // server is used to implement chat.GreeterServer.
@@ -87,6 +86,8 @@ func (s *echoServer) Replay(ctx context.Context, in *chat.EchoRequest) (*chat.Ec
 }
 
 func main() {
+	flag.Parse()
+
 	lis, err := net.Listen("tcp", address)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)

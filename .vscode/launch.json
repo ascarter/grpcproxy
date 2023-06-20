@@ -43,7 +43,7 @@
             "env": {},
             "args": [
                 "-address",
-                ":50050",
+                ":8050",
                 "-cacert",
                 "${workspaceFolder}/dist/cert.pem",
                 "hello"

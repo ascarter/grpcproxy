@@ -16,7 +16,8 @@ Install [protobuf compiler](https://github.com/protocolbuffers/protobuf/releases
 Install Go generator for protobuf and grpc:
 
 ```
-go get -u google.golang.org/protobuf/cmd/protoc-gen-go google.golang.org/grpc/cmd/protoc-gen-go-grpc
+go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 ```
 
 ## Build
@@ -35,7 +36,7 @@ The server and proxy should either run in separate shells or run in the backgrou
 
 ### Server
 
-By default, server listens on `:50051` and looks for certificates in the current directory.
+By default, server listens on `:8051` and looks for certificates in the current directory.
 
 ```
 ./dist/server
@@ -43,7 +44,7 @@ By default, server listens on `:50051` and looks for certificates in the current
 
 ### Proxy
 
-By default, proxy listens on `:50050`, forwards to `:50051` and looks for certficates in the current directory:
+By default, proxy listens on `:8050`, forwards to `:8051` and looks for certficates in the current directory:
 
 ```
 ./dist/proxy
@@ -56,14 +57,14 @@ The client supports two commands:
 hello <name>
 echo <string>
 
-By default, it will send to server on `:50051`. Use `-address` to use proxy. The client uses certificates in the current directory by default.
+By default, it will send to server on `:8051`. Use `-address` to use proxy. The client uses certificates in the current directory by default.
 
 ```
 # Send to server
 ./dist/client hello bob
 
 # Send to proxy
-./dist/client -address :50050 echo where are you sally?
+./dist/client -address :8050 echo where are you sally?
 ```
 
 ## Certificates
@@ -77,8 +78,8 @@ Using gRPC server reflection, tools like [grpcurl](https://github.com/fullstoryd
 Example:
 
 ```
-grpcurl -cacert ca.crt -cert client.crt -key client.key localhost:50051 list
-grpcurl -cacert ca.crt -cert client.crt -key client.key -d '{"name": "Bob"}' localhost:50051 chat.Greeter/SayHello
+grpcurl -cacert ca.crt -cert client.crt -key client.key localhost:8051 list
+grpcurl -cacert ca.crt -cert client.crt -key client.key -d '{"name": "Bob"}' localhost:8051 chat.Greeter/SayHello
 ```
 
 Response is in JSON:

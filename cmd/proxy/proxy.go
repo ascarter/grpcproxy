@@ -27,12 +27,11 @@ var (
 )
 
 func init() {
-	flag.StringVar(&address, "address", ":50050", "listen address")
-	flag.StringVar(&origin, "origin", ":50051", "proxy origin")
+	flag.StringVar(&address, "address", ":8050", "listen address")
+	flag.StringVar(&origin, "origin", ":8051", "proxy origin")
 	flag.StringVar(&certFile, "cert", "certificates/proxy.crt", "certificate file")
 	flag.StringVar(&keyFile, "key", "certificates/proxy.key", "key file")
 	flag.StringVar(&caCertFile, "cacert", "certificates/ca.crt", "ca certificate file")
-	flag.Parse()
 }
 
 // newProxy returns a reverse proxy for addr
@@ -97,6 +96,8 @@ func dumpRequest(r *http.Request) error {
 }
 
 func main() {
+	flag.Parse()
+
 	log.Printf("Proxy forwarding %v => %v", address, origin)
 
 	proxy, err := newProxy(origin, caCertFile, certFile, keyFile)

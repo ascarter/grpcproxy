@@ -31,13 +31,11 @@ var (
 )
 
 func init() {
-	flag.StringVar(&address, "address", ":50051", "server address")
+	flag.StringVar(&address, "address", ":8051", "server address")
 	flag.StringVar(&caCertFile, "cacert", "certificates/ca.crt", "ca certificate file")
 	flag.StringVar(&clientCertFile, "clientcert", "certificates/client.crt", "client certificate file")
 	flag.StringVar(&clientKeyFile, "clientkey", "certificates/client.key", "client key file")
 	flag.BoolVar(&insecure, "insecure", false, "connect insecure")
-
-	flag.Parse()
 
 	commands = map[string]Command{
 		"hello":  hello,
@@ -189,6 +187,8 @@ func status(conn *grpc.ClientConn, args []string) error {
 }
 
 func main() {
+	flag.Parse()
+
 	// Verify subcommand provided
 	if len(flag.Args()) < 1 {
 		log.Fatal("command required (hello|echo|status)")
